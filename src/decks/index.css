@@ -1,0 +1,47 @@
+.players-container {
+    display: flex;
+    margin-top: 50px;
+    margin-left: 50px;
+    margin-right: 0px;
+  }
+  
+  .dealers-container {
+    display: flex;
+    margin-top: 50px;
+    margin-left: 50px;
+    margin-right: 0px;
+  }
+  
+
+  .dealers {
+    margin-left: 20px;
+  }
+  
+  .players {
+    margin-left: 20px;
+  }
+  
+  button {
+    margin-top: 200px;
+    margin-left: 50px;
+    width: 100px;
+    height: 100px;
+  }
+
+  .stay {
+    background-color: lightgreen;
+    font-size: large;
+    border-radius: 50px;
+  }
+
+  .hit {
+    background-color: red;
+    font-size: large;
+    border-radius: 50px;
+  }
+
+  .winner {
+    position: absolute;
+    right: 900px;
+    bottom: 450px;
+  }
