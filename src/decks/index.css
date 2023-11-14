@@ -45,3 +45,10 @@
     right: 900px;
     bottom: 450px;
   }
+
+  .total {
+    font-size: 150px;
+    position: absolute;
+    left: 750px;
+    bottom: 150px;
+  }

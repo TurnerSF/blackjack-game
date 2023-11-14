@@ -9,6 +9,8 @@ const GetDeck = () => {
   const [error, setError] = useState(null);
   const [playerTurnOver, setPlayerTurnOver] = useState(false);
   const [winner, setWinner] = useState(null);
+  const [playerBusted, setPlayerBusted] = useState(false);
+  const [playerBlackjack, setBlackjack] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -80,7 +82,7 @@ const GetDeck = () => {
     });
 
     return sum;
-  }, []); // Empty dependency array as there are no external dependencies
+  }, []);
 
   useEffect(() => {
     if (playerTurnOver) {
@@ -100,10 +102,10 @@ const GetDeck = () => {
         setWinner("Dealer");
       }
     }
-  }, [playerTurnOver, dealerHand, playerHand]);
+  }, [playerTurnOver, dealerHand, playerHand, calculateHandTotal]);
 
   const handleHit = () => {
-    if (!playerTurnOver) {
+    if (!playerTurnOver && !playerBusted && !playerBlackjack) {
       const newPlayerHand = [...playerHand];
 
       fetch(
@@ -115,8 +117,13 @@ const GetDeck = () => {
           setPlayerHand(newPlayerHand);
 
           const playerTotal = calculateHandTotal(newPlayerHand);
-          if (playerTotal > 21 || playerTotal === 21) {
+          if (playerTotal > 21) {
             setPlayerTurnOver(true);
+            setPlayerBusted(true);
+          } else if (playerTotal === 21) {
+            setPlayerTurnOver(true);
+          } else if (playerHand.length === 2 && playerTotal === 21) {
+            setBlackjack(true)
           }
         })
         .catch((error) =>
@@ -125,15 +132,23 @@ const GetDeck = () => {
     }
   };
 
+  useEffect(() => {
+    // Check if the initial deal results in a blackjack (total of 21)
+    const playerTotal = calculateHandTotal(playerHand);
+    if (playerTotal === 21 && playerHand.length === 2) {
+      setPlayerTurnOver(true);
+      setBlackjack(true);
+    }
+  }, [playerHand, calculateHandTotal]);
+
   const handleStay = () => {
     setPlayerTurnOver(true);
   };
 
-
   const handleDealerTurn = useCallback(async () => {
-    if (playerTurnOver) {
+    if (playerTurnOver && !playerBusted && !playerBlackjack) {
       let dealerTotal = calculateHandTotal(dealerHand);
-  
+
       while (
         dealerTotal < 17 ||
         (dealerTotal === 17 && dealerHand.some((card) => card.value === "ACE"))
@@ -143,21 +158,29 @@ const GetDeck = () => {
             `https://www.deckofcardsapi.com/api/deck/${deck.deck_id}/draw/?count=1`
           );
           const data = await response.json();
-  
+
           setDealerHand((prevDealerHand) => [...prevDealerHand, ...data.cards]);
-  
+
           await new Promise((resolve) => setTimeout(resolve, 1000)); // Delay for better visualization (optional)
-  
-          dealerTotal = calculateHandTotal((prevDealerHand) => [...prevDealerHand, ...data.cards]);
+
+          dealerTotal = calculateHandTotal((prevDealerHand) => [
+            ...prevDealerHand,
+            ...data.cards,
+          ]);
         } catch (error) {
           console.error("Error fetching dealer's cards:", error);
           break; // Exit the loop if there's an error
         }
       }
     }
-  }, [playerTurnOver, dealerHand, deck.deck_id, calculateHandTotal]);
-  
-  
+  }, [
+    playerTurnOver,
+    dealerHand,
+    deck.deck_id,
+    calculateHandTotal,
+    playerBusted,
+    playerBlackjack
+  ]);
 
   useEffect(() => {
     handleDealerTurn();
@@ -189,11 +212,13 @@ const GetDeck = () => {
               alt={`${playerCard.value} of ${playerCard.suit}`}
             />
             <p>{`${playerCard.value} of ${playerCard.suit}`}</p>
+            
           </div>
         ))}
         <div className="players-choice">
           {!playerTurnOver && (
             <>
+            <p className="total">{calculateHandTotal(playerHand)}</p>
               <button className="stay" onClick={handleStay}>
                 Stay
               </button>
