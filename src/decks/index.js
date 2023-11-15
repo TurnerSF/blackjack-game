@@ -10,13 +10,14 @@ const GetDeck = () => {
   const [playerTurnOver, setPlayerTurnOver] = useState(false);
   const [winner, setWinner] = useState(null);
   const [playerBusted, setPlayerBusted] = useState(false);
-  const [playerBlackjack, setBlackjack] = useState(false);
+  const [hideSecondDealerCard, setHideSecondDealerCard] = useState(true);
+  const [playerBlackjack, setPlayerBlackjack] = useState(false);
 
   useEffect(() => {
     setLoading(true);
     setError(null);
 
-    fetch("https://www.deckofcardsapi.com/api/deck/new/shuffle/?deck_count=1")
+    fetch("https://www.deckofcardsapi.com/api/deck/new/shuffle/?deck_count=5")
       .then((res) => res.json())
       .then((data) => {
         setDeck(data);
@@ -122,8 +123,9 @@ const GetDeck = () => {
             setPlayerBusted(true);
           } else if (playerTotal === 21) {
             setPlayerTurnOver(true);
+            setPlayerBlackjack(true);
           } else if (playerHand.length === 2 && playerTotal === 21) {
-            setBlackjack(true)
+            setPlayerBlackjack(true);
           }
         })
         .catch((error) =>
@@ -137,18 +139,19 @@ const GetDeck = () => {
     const playerTotal = calculateHandTotal(playerHand);
     if (playerTotal === 21 && playerHand.length === 2) {
       setPlayerTurnOver(true);
-      setBlackjack(true);
+      setPlayerBlackjack(true);
     }
   }, [playerHand, calculateHandTotal]);
 
   const handleStay = () => {
     setPlayerTurnOver(true);
+    setHideSecondDealerCard(false);
   };
 
   const handleDealerTurn = useCallback(async () => {
     if (playerTurnOver && !playerBusted && !playerBlackjack) {
       let dealerTotal = calculateHandTotal(dealerHand);
-
+  
       while (
         dealerTotal < 17 ||
         (dealerTotal === 17 && dealerHand.some((card) => card.value === "ACE"))
@@ -158,33 +161,61 @@ const GetDeck = () => {
             `https://www.deckofcardsapi.com/api/deck/${deck.deck_id}/draw/?count=1`
           );
           const data = await response.json();
-
+  
           setDealerHand((prevDealerHand) => [...prevDealerHand, ...data.cards]);
-
-          await new Promise((resolve) => setTimeout(resolve, 1000)); // Delay for better visualization (optional)
-
+  
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+  
           dealerTotal = calculateHandTotal((prevDealerHand) => [
             ...prevDealerHand,
             ...data.cards,
           ]);
         } catch (error) {
           console.error("Error fetching dealer's cards:", error);
-          break; // Exit the loop if there's an error
+          break;
         }
       }
     }
-  }, [
-    playerTurnOver,
-    dealerHand,
-    deck.deck_id,
-    calculateHandTotal,
-    playerBusted,
-    playerBlackjack
-  ]);
+  }, [playerTurnOver, dealerHand, deck.deck_id, calculateHandTotal, playerBusted, playerBlackjack]);
 
   useEffect(() => {
-    handleDealerTurn();
-  }, [playerTurnOver, handleDealerTurn, dealerHand]);
+    if (playerTurnOver) {
+      setHideSecondDealerCard(false); // Show the second dealer card when player's turn is over
+      handleDealerTurn(); // Proceed with dealer's turn
+    }
+  }, [playerTurnOver, handleDealerTurn]);
+
+  const resetGame = () => {
+    setPlayerHand([]);
+    setDealerHand([]);
+    setPlayerTurnOver(false);
+    setWinner(null);
+    setPlayerBusted(false);
+    setHideSecondDealerCard(true);
+    setPlayerBlackjack(false);
+
+    fetch(
+      `https://www.deckofcardsapi.com/api/deck/${deck.deck_id}/draw/?count=2`
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        setPlayerHand(data.cards);
+      })
+      .catch((error) => {
+        setError("Error fetching player's cards: " + error.message);
+      });
+
+    fetch(
+      `https://www.deckofcardsapi.com/api/deck/${deck.deck_id}/draw/?count=2`
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        setDealerHand(data.cards);
+      })
+      .catch((error) => {
+        setError("Error fetching dealer's cards: " + error.message);
+      });
+  };
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error}</p>;
@@ -193,10 +224,14 @@ const GetDeck = () => {
     <div>
       <div className="dealers-container">
         <h2>Dealer's Hand:</h2>
-        {dealerHand.map((dealerCard) => (
+        {dealerHand.map((dealerCard, index) => (
           <div key={dealerCard.code} className="dealers">
             <img
-              src={dealerCard.image}
+              src={
+                index === 1 && hideSecondDealerCard
+                  ? "https://www.deckofcardsapi.com/static/img/back.png"
+                  : dealerCard.image
+              }
               alt={`${dealerCard.value} of ${dealerCard.suit}`}
             />
             <p>{`${dealerCard.value} of ${dealerCard.suit}`}</p>
@@ -212,24 +247,30 @@ const GetDeck = () => {
               alt={`${playerCard.value} of ${playerCard.suit}`}
             />
             <p>{`${playerCard.value} of ${playerCard.suit}`}</p>
-            
           </div>
         ))}
         <div className="players-choice">
-          {!playerTurnOver && (
-            <>
+          <>
             <p className="total">{calculateHandTotal(playerHand)}</p>
-              <button className="stay" onClick={handleStay}>
-                Stay
-              </button>
-              <button className="hit" onClick={handleHit}>
-                Hit
-              </button>
-            </>
-          )}
+            {!playerTurnOver && (
+              <>
+                <button className="stay" onClick={handleStay}>
+                  Stay
+                </button>
+                <button className="hit" onClick={handleHit}>
+                  Hit
+                </button>
+              </>
+            )}
+          </>
         </div>
       </div>
       {playerTurnOver && winner && <h2 className="winner">Winner: {winner}</h2>}
+      {winner && (
+        <div >
+          <button onClick={resetGame} className="new-game">New Game</button>
+        </div>
+      )}
     </div>
   );
 };
