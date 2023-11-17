@@ -86,6 +86,16 @@ const GetDeck = () => {
   }, []);
 
   useEffect(() => {
+    // Check if the initial deal results in a blackjack (total of 21)
+    const playerTotal = calculateHandTotal(playerHand);
+    if (playerTotal === 21 && playerHand.length === 2) {
+      setPlayerTurnOver(true);
+      setPlayerBlackjack(true);
+      console.log(playerHand)
+    }
+  }, [playerHand, calculateHandTotal]);
+
+  useEffect(() => {
     if (playerTurnOver) {
       const playerTotal = calculateHandTotal(playerHand);
       const dealerTotal = calculateHandTotal(dealerHand);
@@ -134,14 +144,6 @@ const GetDeck = () => {
     }
   };
 
-  useEffect(() => {
-    // Check if the initial deal results in a blackjack (total of 21)
-    const playerTotal = calculateHandTotal(playerHand);
-    if (playerTotal === 21 && playerHand.length === 2) {
-      setPlayerTurnOver(true);
-      setPlayerBlackjack(true);
-    }
-  }, [playerHand, calculateHandTotal]);
 
   const handleStay = () => {
     setPlayerTurnOver(true);
