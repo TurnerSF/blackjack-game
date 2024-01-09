@@ -25,7 +25,10 @@ This is a simple Blackjack application that utilizes the "Deck of Cards" API to 
 
 ### Navigate to the project directory: cd blackjack-game
 
-### Install dependencies: npm install
+### Install dependencies: 
+```bash
+npm install
+```
 
 ### Usage
 
