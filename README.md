@@ -36,7 +36,10 @@ npm install
 
 ### Usage
 
-1. Start your application: npm start
+1. Start your application: 
+```bash
+npm start
+```
 
 2. Open your browser and navigate to http://localhost:3000.
 
