@@ -20,10 +20,14 @@ This is a simple Blackjack application that utilizes the "Deck of Cards" API to 
 
 1. Clone the repository:
 
-   ```bash
-   git clone https://github.com/TurnerSF/blackjack-game.git
+```bash
+git clone https://github.com/TurnerSF/blackjack-game.git
+```
 
-### Navigate to the project directory: cd blackjack-game
+### Navigate to the project directory: 
+```bash 
+cd blackjack-game
+```
 
 ### Install dependencies: 
 ```bash
